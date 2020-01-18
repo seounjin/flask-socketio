@@ -1,6 +1,6 @@
 from flask import Flask, render_template, session
 from flask_socketio import SocketIO,send,join_room,leave_room,emit
-import json, os
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -8,7 +8,7 @@ socketio = SocketIO(app)
 
 user_Id = {}  # connect id list
 room_dic = {"room_Info": {0: [], 1: [], 2: []}}   # key : 방번호 value : id list
-#room_state = {0:{"white":False,"black":False}}
+# room_state = {0:{"white":False,"black":False}}
 room_state = {0: {"white": False, "black": False}, 1: {"white": False,"black": False}, 2: {"white": False,"black":False}}
 
 
@@ -19,7 +19,7 @@ def index():
 
 #  로그인 메시지
 @socketio.on('login')
-def handle_message(rev_id):  # 메세지 받는
+def login_message(rev_id):  # 메세지 받는
     print('received id: ' + rev_id)
     user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
     emit('login', rev_id)
@@ -27,14 +27,13 @@ def handle_message(rev_id):  # 메세지 받는
 
 # 방 리스트 요청 받고 방리스트 보내주는 매서드
 @socketio.on('battle', namespace='/battle')
-def handle_message0(message):  # 메세지 받는
+def handle_message(message):  # 메세지 받는
 
     if message == "room_list":
         print(message + "받음")
         send(room_dic)
 
     elif "ready" in message.keys():
-        print(message)
         mes = message["ready"]
         mes_index = mes["room_index"]
         mes_color = mes["color"]
@@ -49,7 +48,20 @@ def handle_message0(message):  # 메세지 받는
 
         if room_state[mes_index]["white"] == True and room_state[mes_index]["black"] == True:
             #send("gamestart", room=mes_index)
-            send({"gamestart":{w_b[mes_index][0]: "white", w_b[mes_index][1]: "black"}}, room=mes_index)
+            send({"gamestart":{w_b[mes_index][0]: "white", w_b[mes_index][1]: "black"}}, room=mes_index)  # room에 있는 유저가 백인지 흑인지 보내줌
+
+    elif "tile_set"in message.keys():
+        mes = message["tile_set"]
+        mes_x = mes["X"]
+        mes_y = mes["Y"]
+        mes_sender = mes["Sender"]
+        mes_tile = mes["Tile"]
+        mes_index = mes["room_index"]
+
+        send({"tile_set": {"Sender": mes_sender, "X": mes_x, "Y": mes_y, "Tile": mes_tile}}, room=mes_index)
+
+
+
 
 @socketio.on('join', namespace='/battle')  # room join
 def on_join(r_info):
@@ -93,10 +105,6 @@ def on_leave(r_info):
     if len(room_info[r_index]) == 1:  # 방에 두명일경우
         send({"white_black": {"white": room_info[r_index][0], "black": "대기중"}}, room=room)
 
-
-if __name__ == '__main__':
-    #socketio.run(app,host='0.0.0.0',port=5000,debug=True)
-    socketio.run(app,port=5000, debug=True)
 
 
 
