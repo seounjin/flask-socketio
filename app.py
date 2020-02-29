@@ -1,5 +1,5 @@
-from flask import Flask, render_template, session
-from flask_socketio import SocketIO,send,join_room,leave_room,emit
+from flask import Flask, render_template
+from flask_socketio import SocketIO, send, join_room, leave_room, emit
 
 
 app = Flask(__name__)
@@ -23,6 +23,14 @@ def login_message(rev_id):  # 메세지 받는
     print('received id: ' + rev_id)
     user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
     emit('login', rev_id)
+
+#  연결 종료 메세지 받는
+@socketio.on('exit')
+def login_message(rev_id):
+    print(rev_id," 연결 종료함")
+    # user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
+    # emit('login', rev_id)
+
 
 
 # 방 리스트 요청 받고 방리스트 보내주는 매서드
@@ -48,9 +56,10 @@ def handle_message(message):  # 메세지 받는
 
         if room_state[mes_index]["white"] == True and room_state[mes_index]["black"] == True:
             #send("gamestart", room=mes_index)
-            send({"gamestart":{w_b[mes_index][0]: "white", w_b[mes_index][1]: "black"}}, room=mes_index)  # room에 있는 유저가 백인지 흑인지 보내줌
+            send({"gamestart":{w_b[mes_index][0]: "White", w_b[mes_index][1]: "Black"}}, room=mes_index)  # room에 있는 유저가 백인지 흑인지 보내줌
 
     elif "tile_set"in message.keys():
+        print("타일셋 받음")
         mes = message["tile_set"]
         mes_x = mes["X"]
         mes_y = mes["Y"]
@@ -61,31 +70,36 @@ def handle_message(message):  # 메세지 받는
         send({"tile_set": {"Sender": mes_sender, "X": mes_x, "Y": mes_y, "Tile": mes_tile}}, room=mes_index)
 
 
-
-
 @socketio.on('join', namespace='/battle')  # room join
 def on_join(r_info):
-    r_index = r_info["room_index"]
-    username = user_Id[r_info["user_id"]]
     room_info = room_dic["room_Info"]
 
-    # room_Info 방이 있는지 검사
-    if r_index in room_info.keys():
-        if not len(room_info[r_index]):  # 방에 사람이 없을 경우 방에 사람 추가
-            room_info[r_index] = [username]
-        else:
-            room_info[r_index] = room_info.get(r_index, []) + [username]
-    else:  # room_Info 방이 없을경우 방 추가
-        room_info[r_index] = [username]
-
-    room = r_index
-    join_room(room)
-
-    # 실시간 방업데이트
-    if len(room_info[r_index]) == 2:  # 방에 두명일경우
-        send({"white_black": {"white": room_info[r_index][0], "black": room_info[r_index][1]}}, room=room)
+    # 방 인원수 제한 2명
+    if len(room_info[r_info["room_index"]]) == 2:
+        send("full")
     else:
-        send({"white_black": {"white": room_info[r_index][0], "black": "대기중"}}, room=room)
+        send("pos")
+        r_index = r_info["room_index"]
+        username = user_Id[r_info["user_id"]]
+        #room_info = room_dic["room_Info"]
+
+        # room_Info 방이 있는지 검사
+        if r_index in room_info.keys():
+            if not len(room_info[r_index]):  # 방에 사람이 없을 경우 방에 사람 추가
+                room_info[r_index] = [username]
+            else:
+                room_info[r_index] = room_info.get(r_index, []) + [username]
+        else:  # room_Info 방이 없을경우 방 추가
+            room_info[r_index] = [username]
+
+        room = r_index
+        join_room(room)
+
+        # 실시간 방업데이트
+        if len(room_info[r_index]) == 2:  # 방에 두명일경우
+            send({"white_black": {"white": room_info[r_index][0], "black": room_info[r_index][1]}}, room=room)
+        else:
+            send({"white_black": {"white": room_info[r_index][0], "black": "대기중"}}, room=room)
 
 
 @socketio.on('leave', namespace='/battle')  # room leave
@@ -105,9 +119,13 @@ def on_leave(r_info):
     if len(room_info[r_index]) == 1:  # 방에 두명일경우
         send({"white_black": {"white": room_info[r_index][0], "black": "대기중"}}, room=room)
 
+@socketio.on('disconnect', namespace='/battle')
+def trax_disconnect():
+    print("연결 종료")
 
-
-
+if __name__ == '__main__':
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    #socketio.run(app, port=5000, debug=True)
 
 
 
