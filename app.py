@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 from flask_socketio import SocketIO, send, join_room, leave_room, emit
-
+import database
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
@@ -11,6 +11,7 @@ room_dic = {"room_Info": {0: [], 1: [], 2: []}}   # key : 방번호 value : id l
 # room_state = {0:{"white":False,"black":False}}
 room_state = {0: {"white": False, "black": False}, 1: {"white": False,"black": False}, 2: {"white": False,"black":False}}
 
+db = database.Database()
 
 @app.route('/')
 def index():
@@ -23,6 +24,35 @@ def login_message(rev_id):  # 메세지 받는
     print('received id: ' + rev_id)
     user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
     emit('login', rev_id)
+
+
+# 사용자 정보 메세지 받는
+@socketio.on('join')
+def join_message(user_info):  # 메세지 받는
+    print(user_info)
+    print(user_info["join"]["id"],
+     user_info["join"]["password"],
+     user_info["join"]["name"],
+     user_info["join"]["email"])
+
+    db.insert_user(user_info["join"]["id"],
+     user_info["join"]["password"],
+     user_info["join"]["name"],
+     user_info["join"]["email"])
+
+# id 중복 체크
+@socketio.on('check')
+def join_message(rev_id):  # 메세지 받는
+    db.user_id_check()
+    db_info = db.executeAll()
+    print(db_info)
+    for row in db_info:
+        if rev_id == row['ID']:
+            emit('client_id_check', 'F')
+        else:
+            emit('client_id_check', 'T')
+
+    db.close_db()
 
 #  연결 종료 메세지 받는
 @socketio.on('exit')
