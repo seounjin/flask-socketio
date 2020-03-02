@@ -8,7 +8,6 @@ socketio = SocketIO(app)
 
 user_Id = {}  # connect id list
 room_dic = {"room_Info": {0: [], 1: [], 2: []}}   # key : 방번호 value : id list
-# room_state = {0:{"white":False,"black":False}}
 room_state = {0: {"white": False, "black": False}, 1: {"white": False,"black": False}, 2: {"white": False,"black":False}}
 
 db = database.Database()
@@ -40,6 +39,9 @@ def join_message(user_info):  # 메세지 받는
      user_info["join"]["name"],
      user_info["join"]["email"])
 
+    emit('join_check', 'T')
+
+
 # id 중복 체크
 @socketio.on('check')
 def join_message(rev_id):  # 메세지 받는
@@ -60,7 +62,6 @@ def login_message(rev_id):
     print(rev_id," 연결 종료함")
     # user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
     # emit('login', rev_id)
-
 
 
 # 방 리스트 요청 받고 방리스트 보내주는 매서드
