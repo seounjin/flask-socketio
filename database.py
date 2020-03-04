@@ -31,6 +31,20 @@ class Database:
         sql = "SELECT ID FROM INFO;"
         self.cur.execute(sql)
 
+    def user_login_check(self, user_id, user_password):
+        self.connect_db()
+        sql = """SELECT COUNT(*) FROM `login_schema`.`info` WHERE id = %s and password = %s; """
+        self.cur.execute(sql, (user_id, user_password))
+        print(user_id,user_password)
+
+        for index in self.cur:
+            if index['COUNT(*)'] == 1:
+                self.close_db()
+                return True
+            else:
+                self.close_db()
+                return False
+
     def executeOne(self):
         row = self.cur.fetchone()
         return row

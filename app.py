@@ -19,10 +19,21 @@ def index():
 
 #  로그인 메시지
 @socketio.on('login')
-def login_message(rev_id):  # 메세지 받는
-    print('received id: ' + rev_id)
-    user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
-    emit('login', rev_id)
+def login_message(user_info):  # 메세지 받는
+    u_id = user_info['id']
+    u_pass = user_info['password']
+    res = db.user_login_check(u_id, u_pass)
+
+    if res == True:
+        print('received id: ' + u_id)
+        user_Id[u_id] = u_id + str('님')  # 접속한 유저아이디 저장
+        emit('login', 'T')
+    else:
+        emit('login', 'F')
+
+# print('received id: ' + rev_id)
+# user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
+# emit('login', rev_id)
 
 
 # 사용자 정보 메세지 받는
@@ -56,7 +67,7 @@ def join_message(rev_id):  # 메세지 받는
 
     db.close_db()
 
-#  연결 종료 메세지 받는
+#  연결 종료 메세지 ++받는
 @socketio.on('exit')
 def login_message(rev_id):
     print(rev_id," 연결 종료함")
