@@ -10,7 +10,7 @@ class Database:
         self.db = pymysql.connect(host='localhost',
                                   port=3306,
                                   user='root',
-                                  passwd='123456789a!',
+                                  passwd='',
                                   db='login_schema',
                                   charset='utf8')
         self.cur = self.db.cursor(pymysql.cursors.DictCursor)
