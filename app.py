@@ -137,6 +137,8 @@ def on_join(r_info):
         room = r_index
         join_room(room)
 
+        print(room_state)
+
         # 실시간 방업데이트
         if len(room_info[r_index]) == 2:  # 방에 두명일경우
             send({"white_black": {"white": room_info[r_index][0], "black": room_info[r_index][1]}}, room=room)
@@ -153,13 +155,18 @@ def on_leave(r_info):
     room_info = room_dic["room_Info"]
 
     room_info[r_index].remove(username)  # 방에서 나간 id 제거
-    print(room_info)
+
     room = r_index
     leave_room(room)
 
     # 실시간 방업데이트
     if len(room_info[r_index]) == 1:  # 방에 두명일경우
         send({"white_black": {"white": room_info[r_index][0], "black": "대기중"}}, room=room)
+
+    # 실시간 레디 초기화
+    room_state[r_index]["white"] = False
+    room_state[r_index]["black"] = False
+    print(room_state)
 
 @socketio.on('disconnect', namespace='/battle')
 def trax_disconnect():
