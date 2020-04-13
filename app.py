@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from flask_socketio import SocketIO, send, join_room, leave_room, emit
 import database
 
@@ -21,8 +21,13 @@ def index():
 @socketio.on('login')
 def login_message(user_info):  # 메세지 받는
     u_id = user_info['id']
+    if u_id in user_Id.keys():  # 접속중인 아이디 확인
+        emit('login', 'S')
+        return
+
     u_pass = user_info['password']
-    res = db.user_login_check(u_id, u_pass)
+    res = db.user_login_check(u_id, u_pass)  # 아이디 비밀번호 체크
+    print(request.sid)
 
     if res == True:
         print('received id: ' + u_id)
@@ -30,10 +35,6 @@ def login_message(user_info):  # 메세지 받는
         emit('login', 'T')
     else:
         emit('login', 'F')
-
-# print('received id: ' + rev_id)
-# user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
-# emit('login', rev_id)
 
 
 # 사용자 정보 메세지 받는
@@ -71,8 +72,8 @@ def join_message(rev_id):  # 메세지 받는
 @socketio.on('exit')
 def login_message(rev_id):
     print(rev_id," 연결 종료함")
-    # user_Id[rev_id] = rev_id + str('님')  # 접속한 유저아이디 저장
-    # emit('login', rev_id)
+
+
 
 
 # 방 리스트 요청 받고 방리스트 보내주는 매서드
@@ -123,7 +124,6 @@ def on_join(r_info):
         send("pos")
         r_index = r_info["room_index"]
         username = user_Id[r_info["user_id"]]
-        #room_info = room_dic["room_Info"]
 
         # room_Info 방이 있는지 검사
         if r_index in room_info.keys():
