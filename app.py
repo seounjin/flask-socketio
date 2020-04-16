@@ -72,8 +72,7 @@ def join_message(rev_id):  # 메세지 받는
 @socketio.on('exit')
 def login_message(rev_id):
     print(rev_id," 연결 종료함")
-
-
+    user_Id.pop(rev_id)
 
 
 # 방 리스트 요청 받고 방리스트 보내주는 매서드
@@ -85,6 +84,7 @@ def handle_message(message):  # 메세지 받는
         send(room_dic)
 
     elif "ready" in message.keys():
+        print(message,"확인")
         mes = message["ready"]
         mes_index = mes["room_index"]
         mes_color = mes["color"]
